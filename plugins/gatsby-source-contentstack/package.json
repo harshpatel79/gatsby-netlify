@@ -1,0 +1,13 @@
+{
+    "name": "gatsby-source-contentstack",
+    "description": "Sample source plugin to fetch data from contentstack",
+    "version": "1.0.0",
+    "dependencies": {
+        "contentstack": "^3.4.1",
+        "node-fetch": "^2.1.2",
+        "query-string": "^6.0.0"
+    },
+    "devDependencies": {
+    }
+}
+  
