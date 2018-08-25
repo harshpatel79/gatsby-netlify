@@ -11,12 +11,12 @@ module.exports = async (configOptions) => {
 
 	const contentTypes = await fetchContentTypes(configOptions);
 	const locales = await fetchLocales(configOptions);
-	const contentTypesEntries = await fetchEntries(locales, contentTypes, configOptions);
+	const entries = await fetchEntries(locales, contentTypes, configOptions);
 
 	const contentstackData = {
 		locales : locales,
 		contentTypes: contentTypes,
-		contentTypesEntries: contentTypesEntries
+		entries: entries
 	};
 
 	return {
@@ -50,15 +50,11 @@ const fetchEntries = async (locales, contentTypes, configOptions) => {
 								    contentTypes,
 								    async (accumulator, contentType) => {
 								    	let contentTypesEntries = await getContentTypeEntries(contentType.uid);
-									    accumulator[contentType.uid]  = {
-									      	contentType: contentType,
-									      	entries: contentTypesEntries
-									    };
+									    accumulator[contentType.uid]  = contentTypesEntries;
 									    return accumulator;
 								    },
 								    {}
-								)
-
+								);
 	return allContentTypesEntries;
 
 	async function getContentTypeEntries(contentTypeUid) {
@@ -73,7 +69,7 @@ const fetchEntries = async (locales, contentTypes, configOptions) => {
 							    return accumulator;
 						    },
 						    []
-						)
+						);
 		return entries;
 	}
 }
@@ -86,7 +82,7 @@ const fetchCsData = async (url, config, query) => {
     query.environment = config.environment;
     let queryParams = queryString.stringify(query);
 	let apiUrl = `${config.cdn}/${url}?${queryParams}`;
-    return new Promise((resolve, reject) => {
+	return new Promise((resolve, reject) => {
                 fetch(apiUrl)
                     .then(response => response.json())
                     .then(data => {
@@ -95,7 +91,7 @@ const fetchCsData = async (url, config, query) => {
                     .catch(err => {
                     	console.error(err);
                     })
-    		})
+    		});
 }
 
 
@@ -105,7 +101,7 @@ const getPagedData = async (
   responseKey,
   query = {},
   skip = 0,
-  limit = 2,
+  limit = 100,
   aggregatedResponse = null
 ) => {
 		query.skip = skip;
@@ -114,7 +110,7 @@ const getPagedData = async (
 		if (!aggregatedResponse) {
 			aggregatedResponse = response[responseKey];
 		} else {
-			aggregatedResponse = aggregatedResponse.concat(response[responseKey])
+			aggregatedResponse = aggregatedResponse.concat(response[responseKey]);
 		}
 		if (skip + limit <= response.count) {
 			return getPagedData(
@@ -125,8 +121,8 @@ const getPagedData = async (
 			  skip + limit,
 			  limit,
 			  aggregatedResponse,
-			)
+			);
 		}
-	  	return aggregatedResponse
+	  	return aggregatedResponse;
 	}
 

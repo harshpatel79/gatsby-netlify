@@ -1,3 +1,4 @@
+const _ = require("lodash");
 const crypto = require("crypto");
 const { map, reduce, parallel } = require("asyncro");
 
@@ -23,7 +24,7 @@ exports.processContentType = (content_type, createNodeId) => {
 }
 
 exports.processEntry = (content_type, entry, createNodeId) => {
-    const nodeId = createNodeId(`contentstack-entry-${entry.uid}-${entry.locale}`);
+    const nodeId = makeEntryNodeUid(entry, createNodeId);
     const nodeContent = JSON.stringify(entry);
     const nodeContentDigest = crypto
         .createHash('md5')
@@ -42,49 +43,93 @@ exports.processEntry = (content_type, entry, createNodeId) => {
     return nodeData;
 }
 
-exports.normalizeEntry = (contentType, entry, createNodeId) => {
-    let resolveEntry = Object.assign({}, entry, builtEntry(contentType.schema, entry));
-    let builtNodeEntry = normalizeFields(resolveEntry, createNodeId);
-    return builtNodeEntry;
+exports.normalizeEntry = (contentType, entry, entries, defaultLocale, createNodeId) => {
+    let resolveEntry = Object.assign({}, entry, builtEntry(contentType.schema, entry, entry.locale, entries, defaultLocale, createNodeId));
+    return resolveEntry;
 }
 
 
-const normalizeFields = (entry, createNodeId) => {
-    let entryObj = {};
-    Object.keys(entry).forEach(key => {
-        if(entry[key] && entry[key].data_type){
-            let field = entry[key];
-            switch (field.data_type) {
-                case "reference":
-                    let referenceFieldName = `${key}___NODE`;
-                    let referenceFieldValue = [];
-                    entry[key].value.forEach(entryUid => {
-                        let referedEntry  = createNodeId(`contentstack-entry-${entryUid}-${entry.locale}`);
-                        referenceFieldValue.push(referedEntry);
-                    });
-                    entryObj[referenceFieldName] = referenceFieldValue;
-                break;
-                default: 
-                    entryObj[key] = entry[key].value;
-            }
-        } else{
-            entryObj[key] = entry[key];
+const makeEntryNodeUid = (entry, createNodeId) => {
+    let publishedLocale = null;
+    if(entry && entry.publish_details){
+        if (Array.isArray(entry.publish_details)) { 
+            publishedLocale = entry.publish_details[0].locale;
+        } else {
+            publishedLocale = entry.publish_details.locale;
         }
+    }
+    return createNodeId(`contentstack-entry-${entry.uid}-${publishedLocale}`);
+};
+
+
+const normalizeGroup = (field, value, locale, entries, defaultLocale, createNodeId) => {
+    let groupObj = null;
+    if(field.multiple && value instanceof Array){
+        groupObj = [];
+        value.forEach(groupValue => {
+            groupObj.push(builtEntry(field.schema, groupValue, locale, entries, defaultLocale, createNodeId));
+        })
+    } else {
+        groupObj = {};
+        groupObj = builtEntry(field.schema, value, locale, entries, defaultLocale, createNodeId);
+    }
+    return groupObj;
+};
+
+const normalizeModularBlock = (blocks, value, locale, entries, defaultLocale, createNodeId) => {
+    let modularBlocksObj = [];
+    value.map(block => {
+        Object.keys(block).forEach(key => {
+            let blockSchema = blocks.filter(block => block.uid ===  key);
+            let blockObj = {};
+            blockObj[key] =  builtEntry(blockSchema[0].schema, block[key], locale, entries, defaultLocale, createNodeId);
+            modularBlocksObj.push(blockObj);
+        });
     });
-    return entryObj;
+    return modularBlocksObj;
+};
+
+const normalizeReferenceField = (value, referenceTo, locale, entries, defaultLocale, createNodeId) => {
+    let reference = [];
+    value.forEach(entryUid => {
+            let nonLocalizedEntries = _.filter(entries, function(entry) { return entry.uid === entryUid }) || [];
+                nonLocalizedEntries.forEach(entry => {
+                    let publishedLocale = null;
+                    if(entry && entry.publish_details){
+                        if (Array.isArray(entry.publish_details)) { 
+                            publishedLocale = entry.publish_details[0].locale;
+                        } else {
+                            publishedLocale = entry.publish_details.locale;
+                        }
+                    }
+                    if(publishedLocale === locale){
+                        reference.push(createNodeId(`contentstack-entry-${entryUid}-${publishedLocale}`));
+                    }
+                });
+         
+    });
+    return reference;
 }
 
 
-const builtEntry = (schema, entry) => {
+const builtEntry = (schema, entry, locale, entries, defaultLocale, createNodeId) => {
 	let entryObj = {};
     schema.forEach(field => {
         let value = (typeof entry[field.uid] != 'undefined') ? entry[field.uid] : null;
-        entryObj[field.uid] = field;
-        if(field.data_type === 'group'){
-            entryObj[field.uid].value = builtEntry(field.schema, entry[field.uid]);
-        } else {
-            entryObj[field.uid].value = value;
+        switch (field.data_type) {
+            case "reference":
+                entryObj[`${field.uid}___NODE`] = normalizeReferenceField(value, field.reference_to, locale, entries[field.reference_to], defaultLocale, createNodeId);
+            break;
+            case "group":
+                entryObj[field.uid] = normalizeGroup(field, value, locale, entries, defaultLocale, createNodeId);
+            break;
+            case "blocks":
+                entryObj[field.uid] = normalizeModularBlock(field.blocks, value, locale, entries, defaultLocale, createNodeId);
+            break;
+            default: 
+            entryObj[field.uid] = value;
         }
+
     });
     return entryObj;
 }
