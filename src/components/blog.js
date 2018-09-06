@@ -1,5 +1,6 @@
 import React from 'react'
 import Link from 'gatsby-link'
+import renderHTML from 'react-render-html'
 
 
 export default class BlogPage extends React.Component {
@@ -10,11 +11,11 @@ export default class BlogPage extends React.Component {
             <div className="container">
                 <div>
                     <section>
-                        <div className="title">
+                        <div className="blog-title">
                             <h2>{blog.title}</h2>
                         </div>
-                        <div className="description">
-                            {blog.blog_description}
+                        <div className="blog-description">
+                            {renderHTML(blog.description)}
                         </div>
                         <div className="author">
                             By: {blog.authors.map(author => {
@@ -39,12 +40,13 @@ export const pageQuery = graphql`
 	    title
 	    id
 	    url
-	    blog_description
+	    description
 	    authors {
 	   	  id 	
 	      name
 	    }
 	  }
     }
+
 `
 

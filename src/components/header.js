@@ -2,17 +2,16 @@ import React from 'react'
 import Link from 'gatsby-link'
 
 const Header = ({ siteTitle }) => (
-  <div
+  <div className="header"
     style={{
-      background: 'rebeccapurple',
-      marginBottom: '1.45rem',
+      padding: '8px'
     }}
   >
     <div
       style={{
         margin: '0 auto',
         maxWidth: 960,
-        padding: '1.45rem 1.0875rem',
+        padding: '0.55rem 2.0875rem',
       }}
     >
       <div className="display-flex">
@@ -21,7 +20,7 @@ const Header = ({ siteTitle }) => (
             to="/"
             className="float-left"
           >
-            {siteTitle}
+            Home
           </Link>
         </h1>
         <h1>

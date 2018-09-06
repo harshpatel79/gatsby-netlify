@@ -11,13 +11,15 @@ export default class IndexPage extends React.Component {
             <div className="container">
                 {blogs.map(edge => {
                     return(
-                        <div key={edge.node.id}>
+                        <div key={edge.node.id} className="blogs">
                             <section>
-                                <div className="title">
+                                <div className="blog-title">
                                     <h2>{edge.node.title}</h2>
                                 </div>
-                                <div className="description">
+                                <div className="blog-description">
                                     {edge.node.short_title}
+                                </div>
+                                <div>
                                     <Link
                                     to={edge.node.url}
                                     >
@@ -47,7 +49,7 @@ export const pageQuery = graphql`
     query BlogQuery {
       allContentstackBlogs(
         limit: 1000,
-        sort: { order: DESC, fields: [created_at] }
+        sort: { order: ASC, fields: [created_at] }
             ) {
         edges {
           node {

@@ -1,6 +1,6 @@
 import React from 'react'
 import Link from 'gatsby-link'
-
+import renderHTML from 'react-render-html'
 
 export default class IndexPage extends React.Component {
     render() {
@@ -8,19 +8,28 @@ export default class IndexPage extends React.Component {
         return (
             <div className="container">
                 <section>
-                    <div className="title">
-                        <h2>Gatsby</h2>
-                    </div>
-                    <div className="description">
-                        {data.contentstackGatsbyContentstackIntro.gatsby_intro}
+                    <div>
+                        <figure>
+                          <img src={data.contentstackHomePage.banner.url} alt={data.contentstackHomePage.banner.title} width="100%"/>
+                        </figure>
                     </div>
                 </section>
                 <section>
-                    <div className="title">
-                        <h2>Contentstack</h2>
-                    </div>
-                    <div className="description">
-                        {data.contentstackGatsbyContentstackIntro.contentstack_intro}
+                    <div className="article-list">
+                        {data.contentstackHomePage.group.map( (article, index) => {
+                            return(
+                                <div className="article"  key={index}>
+                                    <div >
+                                        <div className="title">
+                                            <h2>{article.single_line}</h2>
+                                        </div>
+                                        <div className="description">
+                                            {renderHTML(article.rich_text_editor)}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 </section>
             </div>
@@ -31,10 +40,23 @@ export default class IndexPage extends React.Component {
 
 export const pageQuery = graphql`
     query IndexQuery {
-      contentstackGatsbyContentstackIntro{
+      contentstackHomePage {
         title
-        gatsby_intro
-        contentstack_intro
+        banner {
+          filename
+          url
+          title
+        }
+        banner_description
+        group {
+          single_line
+          file {
+            filename
+            url
+            title
+          }
+          rich_text_editor
+        }
       }
     }
 `
