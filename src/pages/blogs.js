@@ -18,23 +18,13 @@ export default class IndexPage extends React.Component {
                                 </div>
                                 <div className="blog-description">
                                     {edge.node.short_title}
-                                </div>
-                                <div>
                                     <Link
                                     to={edge.node.url}
                                     >
-                                    <span> Read more... </span>
+                                    <span> Read more </span>
                                     </Link>
                                 </div>
-                                <div className="author">
-                                    By: {edge.node.authors.map(author => {
-                                        return(
-                                            <span key={author.id}>
-                                                {author.name}
-                                            </span>
-                                        )
-                                    })}
-                                </div>
+                                
                             </section>
                         </div>
                     )
